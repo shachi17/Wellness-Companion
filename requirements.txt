@@ -1,9 +1,15 @@
+
 streamlit
 langchain
 langchain-core
 langchain-community
 langchain-google-genai
 langchain-chroma
+langchain-huggingface
+langchain-text-splitters
 chromadb
 pypdf
+PyMuPDF
+easyocr
+sentence-transformers
 python-dotenv
