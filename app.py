@@ -99,13 +99,62 @@ if prompt:
     with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
         
-    with st.chat_message("assistant", avatar="💪"):
-        with st.spinner("Thinking..."):
-            response_stream = get_bot_response(
-                user_message=prompt,
-                chat_history=st.session_state.message_history[:-1]
+   
+with st.chat_message("assistant", avatar="💪"):
+    with st.spinner("Thinking..."):
+        response_stream = get_bot_response(
+            user_message=prompt,
+            chat_history=st.session_state.message_history[:-1]
+        )
+
+        response_placeholder = st.empty()
+        final_text = ""
+        failed = False
+
+        try:
+            for chunk in response_stream:
+                final_text += chunk
+                response_placeholder.markdown(final_text)
+
+        except Exception as e:
+            error_text = str(e).lower()
+            failed = True
+
+            if any(word in error_text for word in [
+                "quota", "resource_exhausted", "429",
+                "rate limit", "too many requests"
+            ]):
+                message = (
+                    "Gemini's current usage limit has been reached. "
+                    "Please wait for your quota to reset or check your "
+                    "Google AI quota and billing settings, then try again."
+                )
+            else:
+                message = (
+                    "I'm temporarily unable to generate a response. "
+                    "Please try again shortly."
+                )
+
+            if final_text:
+                response_placeholder.markdown(final_text)
+
+            st.warning(message)
+
+        if failed:
+            if final_text:
+                st.session_state.message_history.append(
+                    AIMessage(content=final_text)
+                )
+            else:
+                st.session_state.message_history.append(
+                    AIMessage(content=(
+                        "I couldn't complete that response. "
+                        "Please try again later."
+                    ))
+                )
+        else:
+            st.session_state.message_history.append(
+                AIMessage(content=final_text)
             )
-            final_text = st.write_stream(response_stream)
-    
-    st.session_state.message_history.append(AIMessage(content=final_text))
-    st.rerun()
+
+st.rerun()
